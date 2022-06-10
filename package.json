@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"private": true,
 	"description": "",
-	"main": "lib/main.js",
+	"main": "lib/setup-genesyscloud-archy.js",
 	"scripts": {
 		"build": "tsc",
 		"format": "prettier --write 'src/**/*.ts'",
@@ -26,6 +26,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@actions/core": "^1.8.2",
+		"@actions/exec": "^1.1.1",
 		"@actions/tool-cache": "^2.0.1"
 	},
 	"devDependencies": {
