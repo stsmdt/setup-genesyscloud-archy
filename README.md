@@ -1,5 +1,7 @@
 # setup-genesyscloud-archy
 
+[![build-test](https://github.com/stsmdt/setup-genesyscloud-archy/actions/workflows/build-test.yml/badge.svg)](https://github.com/stsmdt/setup-genesyscloud-archy/actions/workflows/build-test.yml)
+
 The `stsmdt/setup-genesyscloud-archy` action is a TypeScript action that sets up Genesyscloud Archy in your GitHub Actions workflow by:
 
 - Downloading a specific version of Genesyscloud Archy and adding it to the `PATH`.
