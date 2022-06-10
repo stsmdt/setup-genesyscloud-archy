@@ -1,0 +1,40 @@
+{
+	"name": "setup-genesyscloud-archy",
+	"version": "1.0.0",
+	"private": true,
+	"description": "",
+	"main": "lib/main.js",
+	"scripts": {
+		"build": "tsc",
+		"format": "prettier --write 'src/**/*.ts'",
+		"format-check": "prettier --check 'src/**/*.ts'",
+		"lint": "eslint src/**/*.ts",
+		"package": "ncc build --source-map --license licenses.txt",
+		"all": "npm run build && npm run format && npm run lint && npm run package"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/stsmdt/setup-genesyscloud-archy.git"
+	},
+	"keywords": [
+		"actions",
+		"genesyscloud",
+		"archy",
+		"setup"
+	],
+	"author": "Steffen Schmidt",
+	"license": "MIT",
+	"dependencies": {
+		"@actions/core": "^1.8.2",
+		"@actions/tool-cache": "^2.0.1"
+	},
+	"devDependencies": {
+		"@types/node": "^16.11.7",
+		"@typescript-eslint/eslint-plugin": "^5.27.1",
+		"@typescript-eslint/parser": "^5.27.1",
+		"@vercel/ncc": "^0.34.0",
+		"eslint": "^8.17.0",
+		"prettier": "^2.6.2",
+		"typescript": "^4.7.3"
+	}
+}

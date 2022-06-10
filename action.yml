@@ -1,0 +1,10 @@
+name: "Setup Genesyscloud Archy"
+description: ""
+author: "Steffen Schmidt"
+inputs:
+  archy-version:
+    required: true
+    description: ""
+runs:
+  using: "node16"
+  main: "dist/index.js"
