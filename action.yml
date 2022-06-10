@@ -1,10 +1,10 @@
 name: "Setup Genesyscloud Archy"
-description: ""
+description: "Sets up Genesyscloud Archy in your GitHub Actions workflow."
 author: "Steffen Schmidt"
 inputs:
   archy-version:
     required: true
-    description: ""
+    description: "The version of Genesyscloud Archy to install."
 runs:
   using: "node16"
   main: "dist/index.js"
