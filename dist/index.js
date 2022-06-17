@@ -5913,8 +5913,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getGenesyscloudArchy = void 0;
 const core = __importStar(__nccwpck_require__(186));
+const io = __importStar(__nccwpck_require__(436));
 const tc = __importStar(__nccwpck_require__(784));
-const fs_1 = __importDefault(__nccwpck_require__(147));
 const path_1 = __importDefault(__nccwpck_require__(17));
 const os_1 = __importDefault(__nccwpck_require__(37));
 function getGenesyscloudArchy(version, osPlatform = os_1.default.arch()) {
@@ -5933,7 +5933,8 @@ function getGenesyscloudArchy(version, osPlatform = os_1.default.arch()) {
             downloadPath = yield tc.downloadTool(downloadUrl);
             core.info("Extracting...");
             const extPath = yield tc.extractZip(downloadPath);
-            fs_1.default.renameSync(path_1.default.join(extPath, `archyBin/archy-${platform}-${version}${platform == "win" ? ".exe" : ""}`), path_1.default.join(extPath, `archy${platform == "win" ? ".exe" : ""}`));
+            core.info("Moving extracted binary...");
+            yield io.mv(path_1.default.join(extPath, `archyBin/archy-${platform}-${version}${platform == "win" ? ".exe" : ""}`), path_1.default.join(extPath, `archy${platform == "win" ? ".exe" : ""}`));
             core.info("Adding to the cache...");
             toolPath = yield tc.cacheDir(extPath, "genesyscloud-archy", version);
         }
