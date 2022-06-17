@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
+import * as io from "@actions/io";
 import * as tc from "@actions/tool-cache";
-import fs from "fs";
 import path from "path";
 import os from "os";
 
@@ -22,13 +22,13 @@ export async function getGenesyscloudArchy(
 		const downloadUrl = `https://sdk-cdn.mypurecloud.com/archy/${version}/archy-${platform}.zip`;
 
 		core.debug(`Downloading from URL ${downloadUrl}`);
-
 		downloadPath = await tc.downloadTool(downloadUrl);
 
 		core.info("Extracting...");
 		const extPath = await tc.extractZip(downloadPath);
 
-		fs.renameSync(
+		core.info("Moving extracted binary...");
+		await io.mv(
 			path.join(
 				extPath,
 				`archyBin/archy-${platform}-${version}${
@@ -39,7 +39,6 @@ export async function getGenesyscloudArchy(
 		);
 
 		core.info("Adding to the cache...");
-
 		toolPath = await tc.cacheDir(extPath, "genesyscloud-archy", version);
 	}
 
