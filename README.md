@@ -12,13 +12,20 @@ See [action.yml](action.yml)
 
 This action can be run on `ubuntu-latest`, `windows-latest` and `macos-latest` GitHub Actions runners.
 
-A specific version of Genesyscloud has to be specified.
+A specific version of Genesyscloud or latest can be used.
 
 ```yaml
 steps:
 - uses: stsmdt/setup-genesyscloud-archy@v1
   with:
     archy-version: 2.7.0
+```
+
+```yaml
+steps:
+- uses: stsmdt/setup-genesyscloud-archy@v1
+  with:
+    archy-version: latest
 ```
 
 ## Inputs
