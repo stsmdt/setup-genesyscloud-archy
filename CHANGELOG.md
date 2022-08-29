@@ -1,4 +1,16 @@
-## [1.2.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.1.0...v1.2.0)
+## [1.3.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.2.0...v1.3.0) (2022-08-29)
+
+
+### Features
+
+* version is optional and defaults to latest ([97f172d](https://github.com/stsmdt/setup-genesyscloud-archy/commit/97f172da6676bc414e53a29ea3caac1d8c2ccdcf))
+
+
+### Bug Fixes
+
+* **deps:** bump @actions/core from 1.9.0 to 1.9.1 ([#41](https://github.com/stsmdt/setup-genesyscloud-archy/issues/41)) ([69d1a7c](https://github.com/stsmdt/setup-genesyscloud-archy/commit/69d1a7c14ebd897afde12bf492f0196d8a2550e3))
+
+## [1.2.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.1.0...v1.2.0) (2022-06-27)
 
 
 ### Features
@@ -11,7 +23,7 @@
 
 * **deps:** add @actions/http-client dependency ([d7fbf04](https://github.com/stsmdt/setup-genesyscloud-archy/commit/d7fbf047b728f29fb3641437367ee4610445365f))
 
-## [1.1.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.0.0...v1.1.0)
+## [1.1.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.0.0...v1.1.0) (2022-06-27)
 
 
 ### Features
@@ -25,7 +37,7 @@
 * **deps:** bump @actions/core from 1.8.2 to 1.9.0 ([#9](https://github.com/stsmdt/setup-genesyscloud-archy/issues/9)) ([44d9c06](https://github.com/stsmdt/setup-genesyscloud-archy/commit/44d9c065044fe18fdd9a4bfae1a71b6d2b5cf2ac))
 * **deps:** remove @actions/exec dependency ([62b4384](https://github.com/stsmdt/setup-genesyscloud-archy/commit/62b4384cbc2a570f8fe22e9408a7e7b3b20382cf))
 
-## [1.0.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/3b7e7a22d69c8660b8988e3fdd95a9ce52a928de...v1.0.0)
+## [1.0.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/3b7e7a22d69c8660b8988e3fdd95a9ce52a928de...v1.0.0) (2022-06-27)
 
 
 ### Features
