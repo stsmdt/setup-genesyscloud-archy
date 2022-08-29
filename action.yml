@@ -3,8 +3,9 @@ description: "Sets up Genesyscloud Archy in your GitHub Actions workflow."
 author: "Steffen Schmidt"
 inputs:
   archy-version:
-    required: true
     description: "The version of Genesyscloud Archy to install."
+    default: "latest"
+    required: false
 runs:
   using: "node16"
   main: "dist/index.js"

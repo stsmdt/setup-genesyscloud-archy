@@ -37,6 +37,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./
-        with:
-          archy-version: latest
       - run: archy version
