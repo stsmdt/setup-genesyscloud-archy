@@ -33313,8 +33313,8 @@ const tc = __importStar(__nccwpck_require__(7784));
 const semver = __importStar(__nccwpck_require__(1383));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
-function getGenesyscloudArchy(version, osPlatform = os_1.default.arch()) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getGenesyscloudArchy(version_1) {
+    return __awaiter(this, arguments, void 0, function* (version, osPlatform = os_1.default.arch()) {
         const genesyscloudArchyVersions = yield getVersions();
         if (isLatestSyntax(version)) {
             version = genesyscloudArchyVersions[0].version;
