@@ -32776,7 +32776,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getVersions = exports.getGenesyscloudArchy = void 0;
+exports.getGenesyscloudArchy = getGenesyscloudArchy;
+exports.getVersions = getVersions;
 const core = __importStar(__nccwpck_require__(2186));
 const hc = __importStar(__nccwpck_require__(6255));
 const io = __importStar(__nccwpck_require__(7436));
@@ -32819,7 +32820,6 @@ function getGenesyscloudArchy(version_1) {
         core.addPath(toolPath);
     });
 }
-exports.getGenesyscloudArchy = getGenesyscloudArchy;
 function getVersions() {
     return __awaiter(this, void 0, void 0, function* () {
         const dataUrl = "https://sdk-cdn.mypurecloud.com/archy/versions.json";
@@ -32836,7 +32836,6 @@ function getVersions() {
         return versions;
     });
 }
-exports.getVersions = getVersions;
 function mapOS(os) {
     const mappings = {
         win32: "win",
@@ -32892,7 +32891,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const installer_1 = __nccwpck_require__(2574);
@@ -32912,7 +32911,6 @@ function run() {
         }
     });
 }
-exports.run = run;
 
 
 /***/ }),
