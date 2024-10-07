@@ -4,7 +4,6 @@ import * as io from "@actions/io";
 import * as tc from "@actions/tool-cache";
 import * as semver from "semver";
 import path from "path";
-import os from "os";
 
 interface IArchyVersion {
 	version: string;
@@ -12,7 +11,7 @@ interface IArchyVersion {
 
 export async function getGenesyscloudArchy(
 	version: string,
-	osPlatform: string = os.arch()
+	osPlatform: string = core.platform.arch
 ) {
 	const genesyscloudArchyVersions = await getVersions();
 
