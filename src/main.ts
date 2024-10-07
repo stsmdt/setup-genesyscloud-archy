@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import os from "os";
 import { getGenesyscloudArchy } from "./installer";
 
 export async function run(): Promise<void> {
@@ -8,7 +7,7 @@ export async function run(): Promise<void> {
 		const version: string = core.getInput("archy-version");
 
 		// Gather OS details
-		const osPlatform = os.platform();
+		const osPlatform = core.platform.platform;
 
 		getGenesyscloudArchy(version, osPlatform);
 	} catch (error) {
