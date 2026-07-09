@@ -18381,7 +18381,7 @@ var require_toolrunner = __commonJS({
     var events2 = __importStar(require("events"));
     var child2 = __importStar(require("child_process"));
     var path6 = __importStar(require("path"));
-    var io2 = __importStar(require_io());
+    var io = __importStar(require_io());
     var ioUtil = __importStar(require_io_util());
     var timers_1 = require("timers");
     var IS_WINDOWS4 = process.platform === "win32";
@@ -18597,7 +18597,7 @@ var require_toolrunner = __commonJS({
           if (!ioUtil.isRooted(this.toolPath) && (this.toolPath.includes("/") || IS_WINDOWS4 && this.toolPath.includes("\\"))) {
             this.toolPath = path6.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
           }
-          this.toolPath = yield io2.which(this.toolPath, true);
+          this.toolPath = yield io.which(this.toolPath, true);
           return new Promise((resolve2, reject) => __awaiter9(this, void 0, void 0, function* () {
             this._debug(`exec tool: ${this.toolPath}`);
             this._debug("arguments:");
@@ -20024,47 +20024,119 @@ var require_lib2 = __commonJS({
 });
 
 // node_modules/@actions/io/lib/io-util.js
-var require_io_util2 = __commonJS({
-  "node_modules/@actions/io/lib/io-util.js"(exports2) {
-    "use strict";
-    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      var desc = Object.getOwnPropertyDescriptor(m, k);
-      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function() {
-          return m[k];
-        } };
+function readlink(fsPath) {
+  return __awaiter(this, void 0, void 0, function* () {
+    const result = yield fs.promises.readlink(fsPath);
+    if (IS_WINDOWS && !result.endsWith("\\")) {
+      return `${result}\\`;
+    }
+    return result;
+  });
+}
+function exists(fsPath) {
+  return __awaiter(this, void 0, void 0, function* () {
+    try {
+      yield stat(fsPath);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        return false;
       }
-      Object.defineProperty(o, k2, desc);
-    }) : (function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      o[k2] = m[k];
-    }));
-    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar = exports2 && exports2.__importStar || /* @__PURE__ */ (function() {
-      var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function(o2) {
-          var ar = [];
-          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
-          return ar;
-        };
-        return ownKeys(o);
-      };
-      return function(mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) {
-          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+      throw err;
+    }
+    return true;
+  });
+}
+function isDirectory(fsPath_1) {
+  return __awaiter(this, arguments, void 0, function* (fsPath, useStat = false) {
+    const stats = useStat ? yield stat(fsPath) : yield lstat(fsPath);
+    return stats.isDirectory();
+  });
+}
+function isRooted(p) {
+  p = normalizeSeparators(p);
+  if (!p) {
+    throw new Error('isRooted() parameter "p" cannot be empty');
+  }
+  if (IS_WINDOWS) {
+    return p.startsWith("\\") || /^[A-Z]:/i.test(p);
+  }
+  return p.startsWith("/");
+}
+function tryGetExecutablePath(filePath, extensions) {
+  return __awaiter(this, void 0, void 0, function* () {
+    let stats = void 0;
+    try {
+      stats = yield stat(filePath);
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+      }
+    }
+    if (stats && stats.isFile()) {
+      if (IS_WINDOWS) {
+        const upperExt = path.extname(filePath).toUpperCase();
+        if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
+          return filePath;
         }
-        __setModuleDefault(result, mod);
-        return result;
-      };
-    })();
-    var __awaiter9 = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
+      } else {
+        if (isUnixExecutable(stats)) {
+          return filePath;
+        }
+      }
+    }
+    const originalFilePath = filePath;
+    for (const extension of extensions) {
+      filePath = originalFilePath + extension;
+      stats = void 0;
+      try {
+        stats = yield stat(filePath);
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+        }
+      }
+      if (stats && stats.isFile()) {
+        if (IS_WINDOWS) {
+          try {
+            const directory = path.dirname(filePath);
+            const upperName = path.basename(filePath).toUpperCase();
+            for (const actualName of yield readdir(directory)) {
+              if (upperName === actualName.toUpperCase()) {
+                filePath = path.join(directory, actualName);
+                break;
+              }
+            }
+          } catch (err) {
+            console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
+          }
+          return filePath;
+        } else {
+          if (isUnixExecutable(stats)) {
+            return filePath;
+          }
+        }
+      }
+    }
+    return "";
+  });
+}
+function normalizeSeparators(p) {
+  p = p || "";
+  if (IS_WINDOWS) {
+    p = p.replace(/\//g, "\\");
+    return p.replace(/\\\\+/g, "\\");
+  }
+  return p.replace(/\/\/+/g, "/");
+}
+function isUnixExecutable(stats) {
+  return (stats.mode & 1) > 0 || (stats.mode & 8) > 0 && process.getgid !== void 0 && stats.gid === process.getgid() || (stats.mode & 64) > 0 && process.getuid !== void 0 && stats.uid === process.getuid();
+}
+var fs, path, __awaiter, chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink, IS_WINDOWS, READONLY;
+var init_io_util = __esm({
+  "node_modules/@actions/io/lib/io-util.js"() {
+    fs = __toESM(require("fs"), 1);
+    path = __toESM(require("path"), 1);
+    __awaiter = function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve2) {
           resolve2(value);
@@ -20091,177 +20163,200 @@ var require_io_util2 = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    var _a;
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.READONLY = exports2.UV_FS_O_EXLOCK = exports2.IS_WINDOWS = exports2.unlink = exports2.symlink = exports2.stat = exports2.rmdir = exports2.rm = exports2.rename = exports2.readdir = exports2.open = exports2.mkdir = exports2.lstat = exports2.copyFile = exports2.chmod = void 0;
-    exports2.readlink = readlink2;
-    exports2.exists = exists2;
-    exports2.isDirectory = isDirectory2;
-    exports2.isRooted = isRooted2;
-    exports2.tryGetExecutablePath = tryGetExecutablePath2;
-    exports2.getCmdPath = getCmdPath;
-    var fs3 = __importStar(require("fs"));
-    var path6 = __importStar(require("path"));
-    _a = fs3.promises, exports2.chmod = _a.chmod, exports2.copyFile = _a.copyFile, exports2.lstat = _a.lstat, exports2.mkdir = _a.mkdir, exports2.open = _a.open, exports2.readdir = _a.readdir, exports2.rename = _a.rename, exports2.rm = _a.rm, exports2.rmdir = _a.rmdir, exports2.stat = _a.stat, exports2.symlink = _a.symlink, exports2.unlink = _a.unlink;
-    exports2.IS_WINDOWS = process.platform === "win32";
-    function readlink2(fsPath) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        const result = yield fs3.promises.readlink(fsPath);
-        if (exports2.IS_WINDOWS && !result.endsWith("\\")) {
-          return `${result}\\`;
-        }
-        return result;
-      });
-    }
-    exports2.UV_FS_O_EXLOCK = 268435456;
-    exports2.READONLY = fs3.constants.O_RDONLY;
-    function exists2(fsPath) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        try {
-          yield (0, exports2.stat)(fsPath);
-        } catch (err) {
-          if (err.code === "ENOENT") {
-            return false;
-          }
-          throw err;
-        }
-        return true;
-      });
-    }
-    function isDirectory2(fsPath_1) {
-      return __awaiter9(this, arguments, void 0, function* (fsPath, useStat = false) {
-        const stats = useStat ? yield (0, exports2.stat)(fsPath) : yield (0, exports2.lstat)(fsPath);
-        return stats.isDirectory();
-      });
-    }
-    function isRooted2(p) {
-      p = normalizeSeparators2(p);
-      if (!p) {
-        throw new Error('isRooted() parameter "p" cannot be empty');
-      }
-      if (exports2.IS_WINDOWS) {
-        return p.startsWith("\\") || /^[A-Z]:/i.test(p);
-      }
-      return p.startsWith("/");
-    }
-    function tryGetExecutablePath2(filePath, extensions) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        let stats = void 0;
-        try {
-          stats = yield (0, exports2.stat)(filePath);
-        } catch (err) {
-          if (err.code !== "ENOENT") {
-            console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-          }
-        }
-        if (stats && stats.isFile()) {
-          if (exports2.IS_WINDOWS) {
-            const upperExt = path6.extname(filePath).toUpperCase();
-            if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
-              return filePath;
-            }
-          } else {
-            if (isUnixExecutable2(stats)) {
-              return filePath;
-            }
-          }
-        }
-        const originalFilePath = filePath;
-        for (const extension of extensions) {
-          filePath = originalFilePath + extension;
-          stats = void 0;
-          try {
-            stats = yield (0, exports2.stat)(filePath);
-          } catch (err) {
-            if (err.code !== "ENOENT") {
-              console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-            }
-          }
-          if (stats && stats.isFile()) {
-            if (exports2.IS_WINDOWS) {
-              try {
-                const directory = path6.dirname(filePath);
-                const upperName = path6.basename(filePath).toUpperCase();
-                for (const actualName of yield (0, exports2.readdir)(directory)) {
-                  if (upperName === actualName.toUpperCase()) {
-                    filePath = path6.join(directory, actualName);
-                    break;
-                  }
-                }
-              } catch (err) {
-                console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
-              }
-              return filePath;
-            } else {
-              if (isUnixExecutable2(stats)) {
-                return filePath;
-              }
-            }
-          }
-        }
-        return "";
-      });
-    }
-    function normalizeSeparators2(p) {
-      p = p || "";
-      if (exports2.IS_WINDOWS) {
-        p = p.replace(/\//g, "\\");
-        return p.replace(/\\\\+/g, "\\");
-      }
-      return p.replace(/\/\/+/g, "/");
-    }
-    function isUnixExecutable2(stats) {
-      return (stats.mode & 1) > 0 || (stats.mode & 8) > 0 && process.getgid !== void 0 && stats.gid === process.getgid() || (stats.mode & 64) > 0 && process.getuid !== void 0 && stats.uid === process.getuid();
-    }
-    function getCmdPath() {
-      var _a2;
-      return (_a2 = process.env["COMSPEC"]) !== null && _a2 !== void 0 ? _a2 : `cmd.exe`;
-    }
+    ({ chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs.promises);
+    IS_WINDOWS = process.platform === "win32";
+    READONLY = fs.constants.O_RDONLY;
   }
 });
 
 // node_modules/@actions/io/lib/io.js
-var require_io2 = __commonJS({
-  "node_modules/@actions/io/lib/io.js"(exports2) {
-    "use strict";
-    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      var desc = Object.getOwnPropertyDescriptor(m, k);
-      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function() {
-          return m[k];
-        } };
+function cp(source_1, dest_1) {
+  return __awaiter2(this, arguments, void 0, function* (source, dest, options = {}) {
+    const { force, recursive, copySourceDirectory } = readCopyOptions(options);
+    const destStat = (yield exists(dest)) ? yield stat(dest) : null;
+    if (destStat && destStat.isFile() && !force) {
+      return;
+    }
+    const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path2.join(dest, path2.basename(source)) : dest;
+    if (!(yield exists(source))) {
+      throw new Error(`no such file or directory: ${source}`);
+    }
+    const sourceStat = yield stat(source);
+    if (sourceStat.isDirectory()) {
+      if (!recursive) {
+        throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
+      } else {
+        yield cpDirRecursive(source, newDest, 0, force);
       }
-      Object.defineProperty(o, k2, desc);
-    }) : (function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      o[k2] = m[k];
-    }));
-    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar = exports2 && exports2.__importStar || /* @__PURE__ */ (function() {
-      var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function(o2) {
-          var ar = [];
-          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
-          return ar;
-        };
-        return ownKeys(o);
-      };
-      return function(mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) {
-          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+    } else {
+      if (path2.relative(source, newDest) === "") {
+        throw new Error(`'${newDest}' and '${source}' are the same file`);
+      }
+      yield copyFile2(source, newDest, force);
+    }
+  });
+}
+function mv(source_1, dest_1) {
+  return __awaiter2(this, arguments, void 0, function* (source, dest, options = {}) {
+    if (yield exists(dest)) {
+      let destExists = true;
+      if (yield isDirectory(dest)) {
+        dest = path2.join(dest, path2.basename(source));
+        destExists = yield exists(dest);
+      }
+      if (destExists) {
+        if (options.force == null || options.force) {
+          yield rmRF(dest);
+        } else {
+          throw new Error("Destination already exists");
         }
-        __setModuleDefault(result, mod);
-        return result;
-      };
-    })();
-    var __awaiter9 = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
+      }
+    }
+    yield mkdirP(path2.dirname(dest));
+    yield rename(source, dest);
+  });
+}
+function rmRF(inputPath) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    if (IS_WINDOWS) {
+      if (/[*"<>|]/.test(inputPath)) {
+        throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
+      }
+    }
+    try {
+      yield rm(inputPath, {
+        force: true,
+        maxRetries: 3,
+        recursive: true,
+        retryDelay: 300
+      });
+    } catch (err) {
+      throw new Error(`File was unable to be removed ${err}`);
+    }
+  });
+}
+function mkdirP(fsPath) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    (0, import_assert.ok)(fsPath, "a path argument must be provided");
+    yield mkdir(fsPath, { recursive: true });
+  });
+}
+function which(tool, check) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    if (!tool) {
+      throw new Error("parameter 'tool' is required");
+    }
+    if (check) {
+      const result = yield which(tool, false);
+      if (!result) {
+        if (IS_WINDOWS) {
+          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
+        } else {
+          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
+        }
+      }
+      return result;
+    }
+    const matches = yield findInPath(tool);
+    if (matches && matches.length > 0) {
+      return matches[0];
+    }
+    return "";
+  });
+}
+function findInPath(tool) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    if (!tool) {
+      throw new Error("parameter 'tool' is required");
+    }
+    const extensions = [];
+    if (IS_WINDOWS && process.env["PATHEXT"]) {
+      for (const extension of process.env["PATHEXT"].split(path2.delimiter)) {
+        if (extension) {
+          extensions.push(extension);
+        }
+      }
+    }
+    if (isRooted(tool)) {
+      const filePath = yield tryGetExecutablePath(tool, extensions);
+      if (filePath) {
+        return [filePath];
+      }
+      return [];
+    }
+    if (tool.includes(path2.sep)) {
+      return [];
+    }
+    const directories = [];
+    if (process.env.PATH) {
+      for (const p of process.env.PATH.split(path2.delimiter)) {
+        if (p) {
+          directories.push(p);
+        }
+      }
+    }
+    const matches = [];
+    for (const directory of directories) {
+      const filePath = yield tryGetExecutablePath(path2.join(directory, tool), extensions);
+      if (filePath) {
+        matches.push(filePath);
+      }
+    }
+    return matches;
+  });
+}
+function readCopyOptions(options) {
+  const force = options.force == null ? true : options.force;
+  const recursive = Boolean(options.recursive);
+  const copySourceDirectory = options.copySourceDirectory == null ? true : Boolean(options.copySourceDirectory);
+  return { force, recursive, copySourceDirectory };
+}
+function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    if (currentDepth >= 255)
+      return;
+    currentDepth++;
+    yield mkdirP(destDir);
+    const files = yield readdir(sourceDir);
+    for (const fileName of files) {
+      const srcFile = `${sourceDir}/${fileName}`;
+      const destFile = `${destDir}/${fileName}`;
+      const srcFileStat = yield lstat(srcFile);
+      if (srcFileStat.isDirectory()) {
+        yield cpDirRecursive(srcFile, destFile, currentDepth, force);
+      } else {
+        yield copyFile2(srcFile, destFile, force);
+      }
+    }
+    yield chmod(destDir, (yield stat(sourceDir)).mode);
+  });
+}
+function copyFile2(srcFile, destFile, force) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    if ((yield lstat(srcFile)).isSymbolicLink()) {
+      try {
+        yield lstat(destFile);
+        yield unlink(destFile);
+      } catch (e) {
+        if (e.code === "EPERM") {
+          yield chmod(destFile, "0666");
+          yield unlink(destFile);
+        }
+      }
+      const symlinkFull = yield readlink(srcFile);
+      yield symlink(symlinkFull, destFile, IS_WINDOWS ? "junction" : null);
+    } else if (!(yield exists(destFile)) || force) {
+      yield copyFile(srcFile, destFile);
+    }
+  });
+}
+var import_assert, path2, __awaiter2;
+var init_io = __esm({
+  "node_modules/@actions/io/lib/io.js"() {
+    import_assert = require("assert");
+    path2 = __toESM(require("path"), 1);
+    init_io_util();
+    __awaiter2 = function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve2) {
           resolve2(value);
@@ -20288,196 +20383,6 @@ var require_io2 = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.cp = cp2;
-    exports2.mv = mv2;
-    exports2.rmRF = rmRF2;
-    exports2.mkdirP = mkdirP2;
-    exports2.which = which2;
-    exports2.findInPath = findInPath2;
-    var assert_1 = require("assert");
-    var path6 = __importStar(require("path"));
-    var ioUtil = __importStar(require_io_util2());
-    function cp2(source_1, dest_1) {
-      return __awaiter9(this, arguments, void 0, function* (source, dest, options = {}) {
-        const { force, recursive, copySourceDirectory } = readCopyOptions2(options);
-        const destStat = (yield ioUtil.exists(dest)) ? yield ioUtil.stat(dest) : null;
-        if (destStat && destStat.isFile() && !force) {
-          return;
-        }
-        const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path6.join(dest, path6.basename(source)) : dest;
-        if (!(yield ioUtil.exists(source))) {
-          throw new Error(`no such file or directory: ${source}`);
-        }
-        const sourceStat = yield ioUtil.stat(source);
-        if (sourceStat.isDirectory()) {
-          if (!recursive) {
-            throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
-          } else {
-            yield cpDirRecursive2(source, newDest, 0, force);
-          }
-        } else {
-          if (path6.relative(source, newDest) === "") {
-            throw new Error(`'${newDest}' and '${source}' are the same file`);
-          }
-          yield copyFile3(source, newDest, force);
-        }
-      });
-    }
-    function mv2(source_1, dest_1) {
-      return __awaiter9(this, arguments, void 0, function* (source, dest, options = {}) {
-        if (yield ioUtil.exists(dest)) {
-          let destExists = true;
-          if (yield ioUtil.isDirectory(dest)) {
-            dest = path6.join(dest, path6.basename(source));
-            destExists = yield ioUtil.exists(dest);
-          }
-          if (destExists) {
-            if (options.force == null || options.force) {
-              yield rmRF2(dest);
-            } else {
-              throw new Error("Destination already exists");
-            }
-          }
-        }
-        yield mkdirP2(path6.dirname(dest));
-        yield ioUtil.rename(source, dest);
-      });
-    }
-    function rmRF2(inputPath) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        if (ioUtil.IS_WINDOWS) {
-          if (/[*"<>|]/.test(inputPath)) {
-            throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
-          }
-        }
-        try {
-          yield ioUtil.rm(inputPath, {
-            force: true,
-            maxRetries: 3,
-            recursive: true,
-            retryDelay: 300
-          });
-        } catch (err) {
-          throw new Error(`File was unable to be removed ${err}`);
-        }
-      });
-    }
-    function mkdirP2(fsPath) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        (0, assert_1.ok)(fsPath, "a path argument must be provided");
-        yield ioUtil.mkdir(fsPath, { recursive: true });
-      });
-    }
-    function which2(tool, check) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        if (!tool) {
-          throw new Error("parameter 'tool' is required");
-        }
-        if (check) {
-          const result = yield which2(tool, false);
-          if (!result) {
-            if (ioUtil.IS_WINDOWS) {
-              throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
-            } else {
-              throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
-            }
-          }
-          return result;
-        }
-        const matches = yield findInPath2(tool);
-        if (matches && matches.length > 0) {
-          return matches[0];
-        }
-        return "";
-      });
-    }
-    function findInPath2(tool) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        if (!tool) {
-          throw new Error("parameter 'tool' is required");
-        }
-        const extensions = [];
-        if (ioUtil.IS_WINDOWS && process.env["PATHEXT"]) {
-          for (const extension of process.env["PATHEXT"].split(path6.delimiter)) {
-            if (extension) {
-              extensions.push(extension);
-            }
-          }
-        }
-        if (ioUtil.isRooted(tool)) {
-          const filePath = yield ioUtil.tryGetExecutablePath(tool, extensions);
-          if (filePath) {
-            return [filePath];
-          }
-          return [];
-        }
-        if (tool.includes(path6.sep)) {
-          return [];
-        }
-        const directories = [];
-        if (process.env.PATH) {
-          for (const p of process.env.PATH.split(path6.delimiter)) {
-            if (p) {
-              directories.push(p);
-            }
-          }
-        }
-        const matches = [];
-        for (const directory of directories) {
-          const filePath = yield ioUtil.tryGetExecutablePath(path6.join(directory, tool), extensions);
-          if (filePath) {
-            matches.push(filePath);
-          }
-        }
-        return matches;
-      });
-    }
-    function readCopyOptions2(options) {
-      const force = options.force == null ? true : options.force;
-      const recursive = Boolean(options.recursive);
-      const copySourceDirectory = options.copySourceDirectory == null ? true : Boolean(options.copySourceDirectory);
-      return { force, recursive, copySourceDirectory };
-    }
-    function cpDirRecursive2(sourceDir, destDir, currentDepth, force) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        if (currentDepth >= 255)
-          return;
-        currentDepth++;
-        yield mkdirP2(destDir);
-        const files = yield ioUtil.readdir(sourceDir);
-        for (const fileName of files) {
-          const srcFile = `${sourceDir}/${fileName}`;
-          const destFile = `${destDir}/${fileName}`;
-          const srcFileStat = yield ioUtil.lstat(srcFile);
-          if (srcFileStat.isDirectory()) {
-            yield cpDirRecursive2(srcFile, destFile, currentDepth, force);
-          } else {
-            yield copyFile3(srcFile, destFile, force);
-          }
-        }
-        yield ioUtil.chmod(destDir, (yield ioUtil.stat(sourceDir)).mode);
-      });
-    }
-    function copyFile3(srcFile, destFile, force) {
-      return __awaiter9(this, void 0, void 0, function* () {
-        if ((yield ioUtil.lstat(srcFile)).isSymbolicLink()) {
-          try {
-            yield ioUtil.lstat(destFile);
-            yield ioUtil.unlink(destFile);
-          } catch (e) {
-            if (e.code === "EPERM") {
-              yield ioUtil.chmod(destFile, "0666");
-              yield ioUtil.unlink(destFile);
-            }
-          }
-          const symlinkFull = yield ioUtil.readlink(srcFile);
-          yield ioUtil.symlink(symlinkFull, destFile, ioUtil.IS_WINDOWS ? "junction" : null);
-        } else if (!(yield ioUtil.exists(destFile)) || force) {
-          yield ioUtil.copyFile(srcFile, destFile);
-        }
-      });
-    }
   }
 });
 
@@ -39112,7 +39017,7 @@ var require_undici2 = __commonJS({
 });
 
 // node_modules/@actions/tool-cache/node_modules/@actions/http-client/lib/index.js
-var http, https, tunnel, import_undici, __awaiter, HttpCodes, Headers, MediaTypes, HttpRedirectCodes, HttpResponseRetryCodes, RetryableHttpVerbs, ExponentialBackoffCeiling, ExponentialBackoffTimeSlice, HttpClientError, HttpClientResponse, HttpClient, lowercaseKeys;
+var http, https, tunnel, import_undici, __awaiter3, HttpCodes, Headers, MediaTypes, HttpRedirectCodes, HttpResponseRetryCodes, RetryableHttpVerbs, ExponentialBackoffCeiling, ExponentialBackoffTimeSlice, HttpClientError, HttpClientResponse, HttpClient, lowercaseKeys;
 var init_lib = __esm({
   "node_modules/@actions/tool-cache/node_modules/@actions/http-client/lib/index.js"() {
     http = __toESM(require("http"), 1);
@@ -39120,7 +39025,7 @@ var init_lib = __esm({
     init_proxy();
     tunnel = __toESM(require_tunnel2(), 1);
     import_undici = __toESM(require_undici2(), 1);
-    __awaiter = function(thisArg, _arguments, P, generator) {
+    __awaiter3 = function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve2) {
           resolve2(value);
@@ -39211,8 +39116,8 @@ var init_lib = __esm({
         this.message = message;
       }
       readBody() {
-        return __awaiter(this, void 0, void 0, function* () {
-          return new Promise((resolve2) => __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve2) => __awaiter3(this, void 0, void 0, function* () {
             let output = Buffer.alloc(0);
             this.message.on("data", (chunk) => {
               output = Buffer.concat([output, chunk]);
@@ -39224,8 +39129,8 @@ var init_lib = __esm({
         });
       }
       readBodyBuffer() {
-        return __awaiter(this, void 0, void 0, function* () {
-          return new Promise((resolve2) => __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve2) => __awaiter3(this, void 0, void 0, function* () {
             const chunks = [];
             this.message.on("data", (chunk) => {
               chunks.push(chunk);
@@ -39276,42 +39181,42 @@ var init_lib = __esm({
         }
       }
       options(requestUrl, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("OPTIONS", requestUrl, null, additionalHeaders || {});
         });
       }
       get(requestUrl, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("GET", requestUrl, null, additionalHeaders || {});
         });
       }
       del(requestUrl, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("DELETE", requestUrl, null, additionalHeaders || {});
         });
       }
       post(requestUrl, data, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("POST", requestUrl, data, additionalHeaders || {});
         });
       }
       patch(requestUrl, data, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("PATCH", requestUrl, data, additionalHeaders || {});
         });
       }
       put(requestUrl, data, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("PUT", requestUrl, data, additionalHeaders || {});
         });
       }
       head(requestUrl, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request("HEAD", requestUrl, null, additionalHeaders || {});
         });
       }
       sendStream(verb, requestUrl, stream2, additionalHeaders) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return this.request(verb, requestUrl, stream2, additionalHeaders);
         });
       }
@@ -39320,14 +39225,14 @@ var init_lib = __esm({
        * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
        */
       getJson(requestUrl_1) {
-        return __awaiter(this, arguments, void 0, function* (requestUrl, additionalHeaders = {}) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, additionalHeaders = {}) {
           additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
           const res = yield this.get(requestUrl, additionalHeaders);
           return this._processResponse(res, this.requestOptions);
         });
       }
       postJson(requestUrl_1, obj_1) {
-        return __awaiter(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
           const data = JSON.stringify(obj, null, 2);
           additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
           additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes.ApplicationJson);
@@ -39336,7 +39241,7 @@ var init_lib = __esm({
         });
       }
       putJson(requestUrl_1, obj_1) {
-        return __awaiter(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
           const data = JSON.stringify(obj, null, 2);
           additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
           additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes.ApplicationJson);
@@ -39345,7 +39250,7 @@ var init_lib = __esm({
         });
       }
       patchJson(requestUrl_1, obj_1) {
-        return __awaiter(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
           const data = JSON.stringify(obj, null, 2);
           additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
           additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes.ApplicationJson);
@@ -39359,7 +39264,7 @@ var init_lib = __esm({
        * Prefer get, del, post and patch
        */
       request(verb, requestUrl, data, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           if (this._disposed) {
             throw new Error("Client has already been disposed.");
           }
@@ -39433,7 +39338,7 @@ var init_lib = __esm({
        * @param data
        */
       requestRaw(info3, data) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           return new Promise((resolve2, reject) => {
             function callbackForResult(err, res) {
               if (err) {
@@ -39682,15 +39587,15 @@ var init_lib = __esm({
         return baseUserAgent;
       }
       _performExponentialBackoff(retryNumber) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
           retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
           const ms = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
           return new Promise((resolve2) => setTimeout(() => resolve2(), ms));
         });
       }
       _processResponse(res, options) {
-        return __awaiter(this, void 0, void 0, function* () {
-          return new Promise((resolve2, reject) => __awaiter(this, void 0, void 0, function* () {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve2, reject) => __awaiter3(this, void 0, void 0, function* () {
             const statusCode = res.message.statusCode || 0;
             const response = {
               statusCode,
@@ -39763,12 +39668,12 @@ var init_oidc_utils = __esm({
 });
 
 // node_modules/@actions/tool-cache/node_modules/@actions/core/lib/summary.js
-var import_os, import_fs, __awaiter2, access, appendFile, writeFile, SUMMARY_ENV_VAR, Summary, _summary;
+var import_os, import_fs, __awaiter4, access, appendFile, writeFile, SUMMARY_ENV_VAR, Summary, _summary;
 var init_summary = __esm({
   "node_modules/@actions/tool-cache/node_modules/@actions/core/lib/summary.js"() {
     import_os = require("os");
     import_fs = require("fs");
-    __awaiter2 = function(thisArg, _arguments, P, generator) {
+    __awaiter4 = function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve2) {
           resolve2(value);
@@ -39808,7 +39713,7 @@ var init_summary = __esm({
        * @returns step summary file path
        */
       filePath() {
-        return __awaiter2(this, void 0, void 0, function* () {
+        return __awaiter4(this, void 0, void 0, function* () {
           if (this._filePath) {
             return this._filePath;
           }
@@ -39849,7 +39754,7 @@ var init_summary = __esm({
        * @returns {Promise<Summary>} summary instance
        */
       write(options) {
-        return __awaiter2(this, void 0, void 0, function* () {
+        return __awaiter4(this, void 0, void 0, function* () {
           const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
           const filePath = yield this.filePath();
           const writeFunc = overwrite ? writeFile : appendFile;
@@ -39863,7 +39768,7 @@ var init_summary = __esm({
        * @returns {Summary} summary instance
        */
       clear() {
-        return __awaiter2(this, void 0, void 0, function* () {
+        return __awaiter4(this, void 0, void 0, function* () {
           return this.emptyBuffer().write({ overwrite: true });
         });
       }
@@ -40054,343 +39959,6 @@ var init_summary = __esm({
 // node_modules/@actions/tool-cache/node_modules/@actions/core/lib/path-utils.js
 var init_path_utils = __esm({
   "node_modules/@actions/tool-cache/node_modules/@actions/core/lib/path-utils.js"() {
-  }
-});
-
-// node_modules/@actions/tool-cache/node_modules/@actions/io/lib/io-util.js
-function readlink(fsPath) {
-  return __awaiter3(this, void 0, void 0, function* () {
-    const result = yield fs.promises.readlink(fsPath);
-    if (IS_WINDOWS && !result.endsWith("\\")) {
-      return `${result}\\`;
-    }
-    return result;
-  });
-}
-function exists(fsPath) {
-  return __awaiter3(this, void 0, void 0, function* () {
-    try {
-      yield stat(fsPath);
-    } catch (err) {
-      if (err.code === "ENOENT") {
-        return false;
-      }
-      throw err;
-    }
-    return true;
-  });
-}
-function isRooted(p) {
-  p = normalizeSeparators(p);
-  if (!p) {
-    throw new Error('isRooted() parameter "p" cannot be empty');
-  }
-  if (IS_WINDOWS) {
-    return p.startsWith("\\") || /^[A-Z]:/i.test(p);
-  }
-  return p.startsWith("/");
-}
-function tryGetExecutablePath(filePath, extensions) {
-  return __awaiter3(this, void 0, void 0, function* () {
-    let stats = void 0;
-    try {
-      stats = yield stat(filePath);
-    } catch (err) {
-      if (err.code !== "ENOENT") {
-        console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-      }
-    }
-    if (stats && stats.isFile()) {
-      if (IS_WINDOWS) {
-        const upperExt = path.extname(filePath).toUpperCase();
-        if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
-          return filePath;
-        }
-      } else {
-        if (isUnixExecutable(stats)) {
-          return filePath;
-        }
-      }
-    }
-    const originalFilePath = filePath;
-    for (const extension of extensions) {
-      filePath = originalFilePath + extension;
-      stats = void 0;
-      try {
-        stats = yield stat(filePath);
-      } catch (err) {
-        if (err.code !== "ENOENT") {
-          console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-        }
-      }
-      if (stats && stats.isFile()) {
-        if (IS_WINDOWS) {
-          try {
-            const directory = path.dirname(filePath);
-            const upperName = path.basename(filePath).toUpperCase();
-            for (const actualName of yield readdir(directory)) {
-              if (upperName === actualName.toUpperCase()) {
-                filePath = path.join(directory, actualName);
-                break;
-              }
-            }
-          } catch (err) {
-            console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
-          }
-          return filePath;
-        } else {
-          if (isUnixExecutable(stats)) {
-            return filePath;
-          }
-        }
-      }
-    }
-    return "";
-  });
-}
-function normalizeSeparators(p) {
-  p = p || "";
-  if (IS_WINDOWS) {
-    p = p.replace(/\//g, "\\");
-    return p.replace(/\\\\+/g, "\\");
-  }
-  return p.replace(/\/\/+/g, "/");
-}
-function isUnixExecutable(stats) {
-  return (stats.mode & 1) > 0 || (stats.mode & 8) > 0 && process.getgid !== void 0 && stats.gid === process.getgid() || (stats.mode & 64) > 0 && process.getuid !== void 0 && stats.uid === process.getuid();
-}
-var fs, path, __awaiter3, chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink, IS_WINDOWS, READONLY;
-var init_io_util = __esm({
-  "node_modules/@actions/tool-cache/node_modules/@actions/io/lib/io-util.js"() {
-    fs = __toESM(require("fs"), 1);
-    path = __toESM(require("path"), 1);
-    __awaiter3 = function(thisArg, _arguments, P, generator) {
-      function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve2) {
-          resolve2(value);
-        });
-      }
-      return new (P || (P = Promise))(function(resolve2, reject) {
-        function fulfilled(value) {
-          try {
-            step(generator.next(value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function rejected(value) {
-          try {
-            step(generator["throw"](value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function step(result) {
-          result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-        }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-    };
-    ({ chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs.promises);
-    IS_WINDOWS = process.platform === "win32";
-    READONLY = fs.constants.O_RDONLY;
-  }
-});
-
-// node_modules/@actions/tool-cache/node_modules/@actions/io/lib/io.js
-function cp(source_1, dest_1) {
-  return __awaiter4(this, arguments, void 0, function* (source, dest, options = {}) {
-    const { force, recursive, copySourceDirectory } = readCopyOptions(options);
-    const destStat = (yield exists(dest)) ? yield stat(dest) : null;
-    if (destStat && destStat.isFile() && !force) {
-      return;
-    }
-    const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path2.join(dest, path2.basename(source)) : dest;
-    if (!(yield exists(source))) {
-      throw new Error(`no such file or directory: ${source}`);
-    }
-    const sourceStat = yield stat(source);
-    if (sourceStat.isDirectory()) {
-      if (!recursive) {
-        throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
-      } else {
-        yield cpDirRecursive(source, newDest, 0, force);
-      }
-    } else {
-      if (path2.relative(source, newDest) === "") {
-        throw new Error(`'${newDest}' and '${source}' are the same file`);
-      }
-      yield copyFile2(source, newDest, force);
-    }
-  });
-}
-function rmRF(inputPath) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    if (IS_WINDOWS) {
-      if (/[*"<>|]/.test(inputPath)) {
-        throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
-      }
-    }
-    try {
-      yield rm(inputPath, {
-        force: true,
-        maxRetries: 3,
-        recursive: true,
-        retryDelay: 300
-      });
-    } catch (err) {
-      throw new Error(`File was unable to be removed ${err}`);
-    }
-  });
-}
-function mkdirP(fsPath) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    (0, import_assert.ok)(fsPath, "a path argument must be provided");
-    yield mkdir(fsPath, { recursive: true });
-  });
-}
-function which(tool, check) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    if (!tool) {
-      throw new Error("parameter 'tool' is required");
-    }
-    if (check) {
-      const result = yield which(tool, false);
-      if (!result) {
-        if (IS_WINDOWS) {
-          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
-        } else {
-          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
-        }
-      }
-      return result;
-    }
-    const matches = yield findInPath(tool);
-    if (matches && matches.length > 0) {
-      return matches[0];
-    }
-    return "";
-  });
-}
-function findInPath(tool) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    if (!tool) {
-      throw new Error("parameter 'tool' is required");
-    }
-    const extensions = [];
-    if (IS_WINDOWS && process.env["PATHEXT"]) {
-      for (const extension of process.env["PATHEXT"].split(path2.delimiter)) {
-        if (extension) {
-          extensions.push(extension);
-        }
-      }
-    }
-    if (isRooted(tool)) {
-      const filePath = yield tryGetExecutablePath(tool, extensions);
-      if (filePath) {
-        return [filePath];
-      }
-      return [];
-    }
-    if (tool.includes(path2.sep)) {
-      return [];
-    }
-    const directories = [];
-    if (process.env.PATH) {
-      for (const p of process.env.PATH.split(path2.delimiter)) {
-        if (p) {
-          directories.push(p);
-        }
-      }
-    }
-    const matches = [];
-    for (const directory of directories) {
-      const filePath = yield tryGetExecutablePath(path2.join(directory, tool), extensions);
-      if (filePath) {
-        matches.push(filePath);
-      }
-    }
-    return matches;
-  });
-}
-function readCopyOptions(options) {
-  const force = options.force == null ? true : options.force;
-  const recursive = Boolean(options.recursive);
-  const copySourceDirectory = options.copySourceDirectory == null ? true : Boolean(options.copySourceDirectory);
-  return { force, recursive, copySourceDirectory };
-}
-function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    if (currentDepth >= 255)
-      return;
-    currentDepth++;
-    yield mkdirP(destDir);
-    const files = yield readdir(sourceDir);
-    for (const fileName of files) {
-      const srcFile = `${sourceDir}/${fileName}`;
-      const destFile = `${destDir}/${fileName}`;
-      const srcFileStat = yield lstat(srcFile);
-      if (srcFileStat.isDirectory()) {
-        yield cpDirRecursive(srcFile, destFile, currentDepth, force);
-      } else {
-        yield copyFile2(srcFile, destFile, force);
-      }
-    }
-    yield chmod(destDir, (yield stat(sourceDir)).mode);
-  });
-}
-function copyFile2(srcFile, destFile, force) {
-  return __awaiter4(this, void 0, void 0, function* () {
-    if ((yield lstat(srcFile)).isSymbolicLink()) {
-      try {
-        yield lstat(destFile);
-        yield unlink(destFile);
-      } catch (e) {
-        if (e.code === "EPERM") {
-          yield chmod(destFile, "0666");
-          yield unlink(destFile);
-        }
-      }
-      const symlinkFull = yield readlink(srcFile);
-      yield symlink(symlinkFull, destFile, IS_WINDOWS ? "junction" : null);
-    } else if (!(yield exists(destFile)) || force) {
-      yield copyFile(srcFile, destFile);
-    }
-  });
-}
-var import_assert, path2, __awaiter4;
-var init_io = __esm({
-  "node_modules/@actions/tool-cache/node_modules/@actions/io/lib/io.js"() {
-    import_assert = require("assert");
-    path2 = __toESM(require("path"), 1);
-    init_io_util();
-    __awaiter4 = function(thisArg, _arguments, P, generator) {
-      function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve2) {
-          resolve2(value);
-        });
-      }
-      return new (P || (P = Promise))(function(resolve2, reject) {
-        function fulfilled(value) {
-          try {
-            step(generator.next(value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function rejected(value) {
-          try {
-            step(generator["throw"](value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function step(result) {
-          result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-        }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-    };
   }
 });
 
@@ -43304,7 +42872,7 @@ async function getGenesyscloudArchy(version, osPlatform = core.platform.arch) {
     core.info("Extracting...");
     const extPath = await extractZip(downloadPath);
     core.info("Moving extracted binary...");
-    await io.mv(
+    await mv(
       import_path.default.join(
         extPath,
         `archyBin/archy-${platform4}-${version}${platform4 == "win" ? ".exe" : ""}`
@@ -43340,13 +42908,13 @@ function mapOS(os6) {
 function isLatestSyntax(versionSpec) {
   return ["current", "latest"].includes(versionSpec);
 }
-var core, hc, io, semver3, import_path;
+var core, hc, semver3, import_path;
 var init_installer = __esm({
   "src/installer.ts"() {
     "use strict";
     core = __toESM(require_core());
     hc = __toESM(require_lib2());
-    io = __toESM(require_io2());
+    init_io();
     init_tool_cache();
     semver3 = __toESM(require_semver2());
     import_path = __toESM(require("path"));
