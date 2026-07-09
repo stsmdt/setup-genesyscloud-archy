@@ -6,7 +6,7 @@ esbuild.build({
   entryPoints: ['lib/setup-genesyscloud-archy.js'], 
   bundle: true,
   platform: 'node',
-  target: 'node20',
+  target: 'node24',
   outfile: 'dist/index.js', 
   sourcemap: true,
   plugins: [
