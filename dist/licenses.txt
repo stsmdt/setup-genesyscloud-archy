@@ -1,5 +1,5 @@
 ========================================================================
-@actions/core v1.11.1 (MIT)
+@actions/core v3.0.1 (MIT)
 ========================================================================
 
 The MIT License (MIT)
@@ -14,7 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 
 ========================================================================
-@actions/exec v1.1.1 (MIT)
+@actions/exec v3.0.0 (MIT)
 ========================================================================
 
 The MIT License (MIT)
@@ -29,7 +29,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 
 ========================================================================
-@actions/http-client v3.0.0 (MIT)
+@actions/http-client v4.0.1 (MIT)
 ========================================================================
 
 Actions Http Client for Node.js
@@ -57,7 +57,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 ========================================================================
-@actions/io v2.0.0 (MIT)
+@actions/io v3.0.2 (MIT)
 ========================================================================
 
 The MIT License (MIT)
@@ -72,7 +72,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 
 ========================================================================
-@actions/tool-cache v2.0.2 (MIT)
+@actions/tool-cache v4.0.0 (MIT)
 ========================================================================
 
 The MIT License (MIT)
@@ -162,7 +162,7 @@ THE SOFTWARE.
 
 
 ========================================================================
-undici v5.29.0 (MIT)
+undici v6.27.0 (MIT)
 ========================================================================
 
 MIT License
