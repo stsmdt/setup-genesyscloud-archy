@@ -36,7 +36,7 @@ export async function getGenesyscloudArchy(
 		core.info(`Found in cache @ ${toolPath}`);
 	} else {
 		core.info(`Attempting to download ${version}...`);
-		let downloadPath = "";
+		let downloadPath = ""; // eslint-disable-line no-useless-assignment
 
 		const downloadUrl = `https://sdk-cdn.mypurecloud.com/archy/${version}/archy-${platform}.zip`;
 
