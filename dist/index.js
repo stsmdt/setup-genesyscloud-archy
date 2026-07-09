@@ -35054,7 +35054,7 @@ function getGenesyscloudArchy(version_1) {
         }
         else {
             core.info(`Attempting to download ${version}...`);
-            let downloadPath = "";
+            let downloadPath = ""; // eslint-disable-line no-useless-assignment
             const downloadUrl = `https://sdk-cdn.mypurecloud.com/archy/${version}/archy-${platform}.zip`;
             core.debug(`Downloading from URL ${downloadUrl}`);
             downloadPath = yield tc.downloadTool(downloadUrl);
