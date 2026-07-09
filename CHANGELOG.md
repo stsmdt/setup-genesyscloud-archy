@@ -1,3 +1,21 @@
+## [1.5.0](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.4.1...v1.5.0) (2026-07-09)
+
+### Bug Fixes
+
+* **deps:** bump @actions/core from 1.11.1 to 3.0.1 ([#868](https://github.com/stsmdt/setup-genesyscloud-archy/issues/868)) ([2425a97](https://github.com/stsmdt/setup-genesyscloud-archy/commit/2425a970a4578feda560171394313339bed4a89a))
+* **deps:** bump @actions/http-client from 2.2.3 to 3.0.0 ([#826](https://github.com/stsmdt/setup-genesyscloud-archy/issues/826)) ([e9c5e8c](https://github.com/stsmdt/setup-genesyscloud-archy/commit/e9c5e8c0c1be9940e238b85ff2a2ba3c7d4ca718))
+* **deps:** bump @actions/http-client from 3.0.0 to 4.0.1 ([#870](https://github.com/stsmdt/setup-genesyscloud-archy/issues/870)) ([93543a1](https://github.com/stsmdt/setup-genesyscloud-archy/commit/93543a134b6c3eaec75402e23defccbf10be1708))
+* **deps:** bump @actions/io from 1.1.3 to 2.0.0 ([#821](https://github.com/stsmdt/setup-genesyscloud-archy/issues/821)) ([ddfd6ea](https://github.com/stsmdt/setup-genesyscloud-archy/commit/ddfd6ea5aa86795dc0b116c18657f77bb924483e))
+* **deps:** bump @actions/io from 2.0.0 to 3.0.2 ([#862](https://github.com/stsmdt/setup-genesyscloud-archy/issues/862)) ([de51015](https://github.com/stsmdt/setup-genesyscloud-archy/commit/de51015a3d918694ed325f7d074cd41d1af48d5f))
+* **deps:** bump @actions/tool-cache from 2.0.2 to 4.0.0 ([#854](https://github.com/stsmdt/setup-genesyscloud-archy/issues/854)) ([827ecf6](https://github.com/stsmdt/setup-genesyscloud-archy/commit/827ecf6e1abdfa5a4c8c0342b34013ccbd88b32e))
+* **deps:** bump @conventional-changelog/git-client, git-raw-commits and git-semver-tags ([#864](https://github.com/stsmdt/setup-genesyscloud-archy/issues/864)) ([0c7c72e](https://github.com/stsmdt/setup-genesyscloud-archy/commit/0c7c72e3a7afa034120323288a9c0df9a0085ab5))
+* **deps:** bump picomatch from 4.0.3 to 4.0.4 ([#866](https://github.com/stsmdt/setup-genesyscloud-archy/issues/866)) ([951195e](https://github.com/stsmdt/setup-genesyscloud-archy/commit/951195e111c990b5d9825da033ee3d09919e3964))
+* **deps:** bump semver from 7.6.3 to 7.7.0 ([#649](https://github.com/stsmdt/setup-genesyscloud-archy/issues/649)) ([4b05cbc](https://github.com/stsmdt/setup-genesyscloud-archy/commit/4b05cbcb6307a064b8aac4f19fd6581ad75ccbba))
+* **deps:** bump semver from 7.7.0 to 7.7.1 ([#654](https://github.com/stsmdt/setup-genesyscloud-archy/issues/654)) ([e4b105f](https://github.com/stsmdt/setup-genesyscloud-archy/commit/e4b105ff76c200154aea12eef01b21cf97382ca6))
+* **deps:** bump semver from 7.7.1 to 7.7.2 ([#724](https://github.com/stsmdt/setup-genesyscloud-archy/issues/724)) ([fec8601](https://github.com/stsmdt/setup-genesyscloud-archy/commit/fec86014988bbb26e8acd2a684f18cd6605df621))
+* **deps:** bump semver from 7.7.2 to 7.7.3 ([#819](https://github.com/stsmdt/setup-genesyscloud-archy/issues/819)) ([232edb6](https://github.com/stsmdt/setup-genesyscloud-archy/commit/232edb652df5d8013b7e331b914adbbc6b533e41))
+* **deps:** bump semver from 7.7.3 to 7.7.4 ([#861](https://github.com/stsmdt/setup-genesyscloud-archy/issues/861)) ([be31912](https://github.com/stsmdt/setup-genesyscloud-archy/commit/be319121e697ddbaf18d209bd5e740ca1ecb02f0))
+* **deps:** bump undici from 5.28.5 to 5.29.0 ([#728](https://github.com/stsmdt/setup-genesyscloud-archy/issues/728)) ([452b430](https://github.com/stsmdt/setup-genesyscloud-archy/commit/452b430791be1c2abf9e65285af1129b0a14dbee))
 ## [1.4.1](https://github.com/stsmdt/setup-genesyscloud-archy/compare/v1.4.0...v1.4.1) (2025-01-23)
 
 ### Bug Fixes
