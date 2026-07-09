@@ -10,7 +10,7 @@
 		"format-check": "prettier --check 'src/**/*.ts'",
 		"generate-changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0",
 		"lint": "eslint src/**/*.ts",
-		"package": "ncc build --source-map --license licenses.txt",
+		"package": "node build.js",
 		"all": "npm run build && npm run format && npm run lint && npm run package"
 	},
 	"repository": {
@@ -39,8 +39,9 @@
 		"@types/semver": "^7.3.10",
 		"@typescript-eslint/eslint-plugin": "^8.58.2",
 		"@typescript-eslint/parser": "^8.58.2",
-		"@vercel/ncc": "^0.38.0",
 		"conventional-changelog-cli": "^5.0.0",
+		"esbuild": "^0.28.1",
+		"esbuild-plugin-license": "^1.2.3",
 		"eslint": "^10.2.0",
 		"prettier": "^3.0.0",
 		"typescript": "^5.0.2"
